@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Gateway Leasing Appraisal</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/manifest.json">
+<style>
+body { font-family:'SF Pro Display',sans-serif; margin:0; background:#f9f9fb; }
+header { display:flex; justify-content:space-between; align-items:center; padding:15px; font-weight:700;
+background:linear-gradient(145deg,#A8D5BA,#d7f2e1); position:sticky; top:0; }
+.container { padding:20px; text-align:center; }
+.step { display:none; }
+.step.active { display:block; }
+.progress { display:flex; justify-content:space-around; margin:10px 0 20px 0; }
+.progress div { flex:1; margin:0 5px; padding:10px; border-radius:8px; font-weight:700; background:#eee; font-size:14px; }
+.progress .active { background:#A8D5BA; color:#fff; }
+input, textarea, button { width:92%; padding:14px; margin:10px 0; border-radius:10px; border:1px solid #ccc; font-size:16px; }
+button { background:linear-gradient(145deg,#A8D5BA,#d7f2e1); border:none; font-weight:700; cursor:pointer; }
+button:hover { opacity:0.9; }
+label { font-size:14px; }
+.big-btn { font-size:18px; padding:16px; }
+#duplicateWarning { color:red; font-weight:bold; display:none; }
+</style>
+<script>
+function saveLocalStorage(){
+  localStorage.setItem('dealer_name', document.getElementById('dealer_name').value);
+  localStorage.setItem('email', document.getElementById('email').value);
+  localStorage.setItem('phone', document.getElementById('phone').value);
+}
+function nextStep(n){
+  document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+  document.querySelectorAll('.progress div').forEach(bar => bar.classList.remove('active'));
+  document.getElementById('prog'+n).classList.add('active');
+}
+function checkDuplicate(){
+  let vin = document.getElementById('vin').value;
+  if(vin.length > 5){
+    fetch('/check_vin/'+vin).then(r=>r.json()).then(data=>{
+      if(data.duplicate){ document.getElementById('duplicateWarning').style.display='block'; }
+      else { document.getElementById('duplicateWarning').style.display='none'; }
+    });
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <div>Gateway Leasing</div>
+  <div id="greeting"></div>
+</header>
+<div class="container">
+<div class="progress">
+  <div id="prog1" class="active">VIN</div>
+  <div id="prog2">Photos</div>
+  <div id="prog3">Submit</div>
+</div>
+{% if off_duty %}<div style='background:orange;padding:10px;border-radius:8px;margin-bottom:10px;'>⚠️ Appraisals may take longer right now.</div>{% endif %}
+<form method="POST" enctype="multipart/form-data" onsubmit="saveLocalStorage()">
+<div id="step1" class="step active">
+  <input type="text" id="dealer_name" name="dealer_name" placeholder="Your Name" required><br>
+  <input type="text" id="vin" name="vin" placeholder="Enter VIN" required onblur="checkDuplicate()"><br>
+  <div id="duplicateWarning">⚠️ This VIN has been submitted before!</div>
+  <input type="text" name="kms" placeholder="Kilometers" required><br>
+  <input type="email" id="email" name="email" placeholder="Email"><br>
+  <input type="tel" id="phone" name="phone" placeholder="Phone"><br>
+  <button type="button" class="big-btn" onclick="nextStep(2)">Next ➡ Photos</button>
+</div>
+<div id="step2" class="step">
+  <input type="file" name="photos" multiple accept="image/*"><br>
+  <textarea name="notes" placeholder="Notes (optional)"></textarea><br>
+  <button type="button" class="big-btn" onclick="nextStep(3)">Next ➡ Submit</button>
+</div>
+<div id="step3" class="step">
+  <label><input type="checkbox" name="send_copy" checked> Email me a copy</label><br>
+  <button type="submit" class="big-btn">🚀 Submit Appraisal</button>
+</div>
+</form>
+</div>
+<script>
+let hour = new Date().getHours();
+let greet = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+let name = localStorage.getItem('dealer_name');
+if(name){ greet += ', ' + name + '!'; }
+document.getElementById('greeting').innerText = greet;
+</script>
+</body>
+</html>

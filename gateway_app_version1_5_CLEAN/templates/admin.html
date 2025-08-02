@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { font-family:'SF Pro Display',sans-serif; margin:0; background:#f9f9fb; text-align:center; }
+header { background:linear-gradient(145deg,#A8D5BA,#d7f2e1); padding:15px; font-weight:700; display:flex; justify-content:space-between; align-items:center; }
+.card { background:#fff; width:90%; margin:10px auto; padding:12px; border-radius:10px; text-align:left; box-shadow:0 1px 3px rgba(0,0,0,0.1); }
+.status { padding:5px 10px; border-radius:6px; font-weight:700; font-size:12px; }
+.status-pending { background:#4A90E2; color:white; }
+.status-complete { background:#7ED321; color:white; }
+.status-overdue { background:#D0021B; color:white; }
+#search { width:90%; padding:10px; margin:10px auto; border-radius:8px; border:1px solid #ccc; }
+.toggle-btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:700; }
+</style>
+<script>
+function toggleOffDuty(){
+  fetch('/toggle_off_duty', {method:'POST'}).then(()=>{location.reload();});
+}
+function filterVIN(){
+  let input = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('.card').forEach(card => {
+    card.style.display = card.innerText.toLowerCase().includes(input) ? 'block' : 'none';
+  });
+}
+</script>
+</head>
+<body>
+<header>
+ <div>Admin Dashboard</div>
+ <div><button class="toggle-btn" onclick="toggleOffDuty()">Toggle I'm Off</button></div>
+</header>
+<input type="text" id="search" onkeyup="filterVIN()" placeholder="Search by VIN, dealer, or email">
+{% for vin, entries in vin_history.items() %}
+{% for entry in entries %}
+<div class="card">
+  <strong>{{ vin }}</strong> - {{ entry.date }}<br>
+  {{ entry.dealer_name }} | {{ entry.email }} | {{ entry.phone }}<br>
+  {% if entry.get('value') %}
+    <span class="status status-complete">Completed</span> Value: ${{ entry.value }}
+  {% elif entry.overdue %}
+    <span class="status status-overdue">Overdue</span>
+  {% else %}
+    <span class="status status-pending">Pending</span>
+  {% endif %}
+  {% if entry.duplicate %}<div style="color:red;">⚠️ Duplicate VIN</div>{% endif %}
+</div>
+{% endfor %}
+{% endfor %}
+</body>
+</html>
